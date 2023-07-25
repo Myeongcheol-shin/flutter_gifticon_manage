@@ -1,16 +1,69 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
-class CardView extends StatelessWidget {
+class CardView extends StatefulWidget {
   final String name, info;
+  final String? couponNumber;
   final Color color;
-  final bool hasImage;
+  final File? image;
 
   const CardView(
       {super.key,
+      required this.couponNumber,
       required this.color,
       required this.name,
       required this.info,
-      required this.hasImage});
+      required this.image});
+
+  @override
+  State<CardView> createState() => _CardViewState();
+}
+
+class _CardViewState extends State<CardView> {
+  Future<void> showCouponDialog(
+      BuildContext context, File? image, String? couponNumber) async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                image != null ? Image.file(image) : const SizedBox(),
+                couponNumber != null
+                    ? Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            height: 30,
+                          ),
+                          Text(
+                            "Coupon Number",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 20,
+                                color: Colors.grey[700]),
+                          ),
+                          Text(
+                            couponNumber,
+                            style: const TextStyle(
+                                fontSize: 30,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black),
+                          ),
+                        ],
+                      )
+                    : const SizedBox()
+              ],
+            ),
+            actions: const <Widget>[],
+          );
+        });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +71,7 @@ class CardView extends StatelessWidget {
       width: double.infinity,
       height: 160,
       decoration: BoxDecoration(
-        color: color,
+        color: widget.color,
         borderRadius: const BorderRadius.all(Radius.circular(10)),
         boxShadow: [
           BoxShadow(
@@ -63,7 +116,7 @@ class CardView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      name,
+                      widget.name,
                       style: const TextStyle(
                           fontSize: 30,
                           fontWeight: FontWeight.w800,
@@ -74,7 +127,7 @@ class CardView extends StatelessWidget {
                       height: 5,
                     ),
                     Text(
-                      info,
+                      widget.info,
                       style: const TextStyle(
                           fontSize: 18,
                           color: Colors.white,
@@ -84,28 +137,36 @@ class CardView extends StatelessWidget {
                     const Spacer(
                       flex: 1,
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(10)),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 5.0,
-                                offset: const Offset(2, 2))
-                          ]),
-                      child: const Text(
-                        "Detail",
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.black,
-                            decoration: TextDecoration.none),
-                      ),
-                    )
+                    widget.image != null || widget.couponNumber != null
+                        ? GestureDetector(
+                            onTap: () {
+                              showCouponDialog(
+                                  context, widget.image, widget.couponNumber);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: const BorderRadius.all(
+                                      Radius.circular(10)),
+                                  boxShadow: [
+                                    BoxShadow(
+                                        color: Colors.black.withOpacity(0.3),
+                                        blurRadius: 5.0,
+                                        offset: const Offset(2, 2))
+                                  ]),
+                              child: const Text(
+                                "Detail",
+                                style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.black,
+                                    decoration: TextDecoration.none),
+                              ),
+                            ),
+                          )
+                        : const SizedBox()
                   ],
                 ),
               ))

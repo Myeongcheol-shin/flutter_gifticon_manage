@@ -5,7 +5,7 @@ class CardView extends StatefulWidget {
   final String name, info;
   final String? couponNumber;
   final Color color;
-  final File? image;
+  final String? image;
 
   const CardView(
       {super.key,
@@ -21,7 +21,7 @@ class CardView extends StatefulWidget {
 
 class _CardViewState extends State<CardView> {
   Future<void> showCouponDialog(
-      BuildContext context, File? image, String? couponNumber) async {
+      BuildContext context, String? image, String? couponNumber) async {
     return showDialog(
         context: context,
         builder: (context) {
@@ -33,7 +33,7 @@ class _CardViewState extends State<CardView> {
               mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                image != null ? Image.file(image) : const SizedBox(),
+                image != null ? Image.file(File(image)) : const SizedBox(),
                 couponNumber != null
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,

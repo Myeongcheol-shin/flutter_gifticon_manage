@@ -1,12 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_gifticon_box/data/card.dart';
+import 'package:flutter_gifticon_box/data/db.dart';
+import 'package:flutter_gifticon_box/data/db_card.dart';
 import 'package:flutter_gifticon_box/ui_card.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:math';
+import 'dart:async';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -20,7 +23,8 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   void deleteItem(int idx) {
     setState(() {
-      items.removeAt(idx);
+      DatabaseHelper.instance.remove(idx);
+      dataList = DatabaseHelper.instance.getDbCard();
     });
   }
 
@@ -51,74 +55,95 @@ class _MyAppState extends State<MyApp> {
     return Color.fromARGB(255, r, g, b);
   }
 
+  void updateDbList() {
+    setState(() {
+      dataList = DatabaseHelper.instance.getDbCard();
+    });
+  }
+
+  late Future<List<DbCard>> dataList;
+
+  @override
+  void initState() {
+    super.initState();
+    dataList = DatabaseHelper.instance.getDbCard();
+  }
+
   final _companyCtl = TextEditingController();
   final _infoCtl = TextEditingController();
   final _couponCtl = TextEditingController();
 
-  List<dynamic> items = [
-    Cards("Starbucks", "30000원 쿠폰", Colors.blue, null, null),
-    Cards("Vips", "20000원 쿠폰", Colors.amber, null, null)
-  ];
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        floatingActionButton: Builder(builder: (context) {
-          return FloatingActionButton(
-              onPressed: () {
-                _image = null;
-                showAddDialog(context);
-              },
-              child: const Icon(
-                Icons.add,
-                size: 50,
-              ));
-        }),
-        body: Container(
-          color: Colors.white,
-          child: Column(
-            children: [
-              const SizedBox(
-                height: 120,
-              ),
-              Text(
-                "You Have ${items.length} Coupon",
-                style: const TextStyle(
-                    decoration: TextDecoration.none,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: items.length,
-                  itemBuilder: (context, index) {
-                    final item = items[index];
-                    return GestureDetector(
-                      onLongPress: () {
-                        showDeleteDialog(context, index, item.color);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 15),
-                        child: CardView(
-                          couponNumber: item.couponNumber == ""
-                              ? null
-                              : item.couponNumber,
-                          name: item.name,
-                          color: item.color,
-                          info: item.info,
-                          image: item.image,
-                        ),
-                      ),
-                    );
+      home: FutureBuilder(
+        future: dataList,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: Text('Loading..'),
+            );
+          }
+          return Scaffold(
+            floatingActionButton: Builder(builder: (context) {
+              return FloatingActionButton(
+                  onPressed: () {
+                    _image = null;
+                    showAddDialog(context);
                   },
-                ),
-              )
-            ],
-          ),
-        ),
+                  child: const Icon(
+                    Icons.add,
+                    size: 50,
+                  ));
+            }),
+            body: Container(
+              color: Colors.white,
+              child: Column(
+                children: [
+                  const SizedBox(
+                    height: 120,
+                  ),
+                  Text(
+                    "You Have ${snapshot.data!.length} Coupon",
+                    style: const TextStyle(
+                        decoration: TextDecoration.none,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        final item = snapshot.data![index];
+
+                        return GestureDetector(
+                          onLongPress: () {
+                            showDeleteDialog(context, item.id!,
+                                Color(snapshot.data![index].color));
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 15),
+                            child: CardView(
+                                couponNumber: item.couponNumber == ""
+                                    ? null
+                                    : item.couponNumber,
+                                name: item.name,
+                                color: Color(item.color),
+                                info: item.info,
+                                image: item.file != null ? item.file! : null),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -274,8 +299,14 @@ class _MyAppState extends State<MyApp> {
                         if (_companyCtl.text != "" && _infoCtl.text != "")
                           {
                             setState(() {
-                              items.add(Cards(_companyCtl.text, _infoCtl.text,
-                                  getRandomColor(), _image, _couponCtl.text));
+                              DatabaseHelper.instance.add(DbCard(
+                                  name: _companyCtl.text,
+                                  info: _infoCtl.text,
+                                  color: getRandomColor().value,
+                                  file: _image == null ? null : _image!.path,
+                                  couponNumber: _couponCtl.text));
+
+                              updateDbList();
                             })
                           },
                         Navigator.pop(context)

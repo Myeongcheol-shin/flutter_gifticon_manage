@@ -81,8 +81,9 @@ class _MyAppState extends State<MyApp> {
         future: dataList,
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(
-              child: Text('Loading..'),
+            return Container(
+              color: Colors.white,
+              child: const Center(child: CircularProgressIndicator()),
             );
           }
           return Scaffold(
